@@ -1,0 +1,11 @@
+package edu.eci.arsw.spring_sockets_rt_p5;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BBAppStarter {
+    public static void main(String[] args){
+        SpringApplication.run(BBAppStarter.class,args);
+    }
+}
