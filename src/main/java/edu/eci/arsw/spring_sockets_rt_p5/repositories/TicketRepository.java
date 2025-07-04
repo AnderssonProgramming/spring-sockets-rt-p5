@@ -1,0 +1,42 @@
+package edu.eci.arsw.spring_sockets_rt_p5.repositories;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TicketRepository {
+    @Autowired
+    private StringRedisTemplate template;
+
+    // inject the template as ListOperations
+    @Resource(name = "stringRedisTemplate")
+    private ListOperations<String, String> listTickets;
+
+    private int ticketnumber;
+
+    public TicketRepository() {
+    }
+
+    public synchronized Integer getTicket() {
+        Integer a = ticketnumber++;
+        listTickets.leftPush("ticketStore",a.toString());
+        return a;
+    }
+
+    public boolean checkTicket(String ticket) {
+        Long isValid = listTickets.getOperations().boundListOps("ticketStore").remove(0, ticket);
+        return (isValid > 0l);
+    }
+
+    private void eviction() {
+        // Delete tickets after timout or include this functionality in checkticket
+    }
+}

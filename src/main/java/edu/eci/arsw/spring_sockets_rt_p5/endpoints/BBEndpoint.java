@@ -12,6 +12,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.springframework.stereotype.Component;
+import edu.eci.arsw.spring_sockets_rt_p5.BBApplicationContextAware;
+import edu.eci.arsw.spring_sockets_rt_p5.repositories.TicketRepository;
 
 @Component
 @ServerEndpoint("/bbService")
@@ -21,6 +23,12 @@ public class BBEndpoint {
     /* Queue for all open WebSocket sessions */
     static Queue<Session> queue = new ConcurrentLinkedQueue<>();
     Session ownSession = null;
+    private boolean accepted = false;
+    
+    //This code allows to include a bean directly from the application context
+    TicketRepository ticketRepo =
+        (TicketRepository)
+        BBApplicationContextAware.getApplicationContext().getBean("ticketRepository");
 
     /* Call this method to send a message to all clients */
     public void send(String msg) {
@@ -39,8 +47,22 @@ public class BBEndpoint {
 
     @OnMessage
     public void processPoint(String message, Session session) {
-        System.out.println("Point received:" + message + ". From session: " + session);
-        this.send(message);
+        if (accepted) {
+            System.out.println("Point received:" + message + ". From session: " + session);
+            this.send(message);
+        } else {
+            if (!accepted && ticketRepo.checkTicket(message)) {
+                accepted = true;
+                System.out.println("Ticket validated for session: " + session);
+            } else {
+                try {
+                    System.out.println("Invalid ticket, closing session: " + session);
+                    ownSession.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(BBEndpoint.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 
     @OnOpen
